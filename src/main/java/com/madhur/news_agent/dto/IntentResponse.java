@@ -1,15 +1,19 @@
 package com.madhur.news_agent.dto;
 
-import com.madhur.news_agent.intents.IntentType;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
-@NoArgsConstructor
+import java.util.List;
+
+@Data
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 public class IntentResponse {
-    private IntentType intent;
-    private String claim;
 
+    private String intent;          // CHAT or VERIFY
+    private String optimizedQuery;  // rewritten claim
+    private String collection;      // target collection
+    private List<String> entities;
+    private List<String> keywords;
 }

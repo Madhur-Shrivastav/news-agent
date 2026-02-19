@@ -65,77 +65,63 @@ public class NewsIngestionScheduler {
             "privacy","cyber crime","fraud OR scam","physical assault",
             "terrorism","immigration","women","men","family","marriage","society",
 
-            // -------- Cybersecurity / Tech Risk --------
             "cyber attack","data breach","ransomware","hacking",
             "zero day vulnerability","malware","phishing",
             "cloud security","information leak",
 
-            // -------- AI Misuse / Threats --------
             "ai scam","voice cloning","deepfake video",
             "synthetic media","ai generated content",
             "ai copyright","ai ethics",
 
-            // -------- Economy / Business --------
             "layoffs","job cuts","hiring freeze",
             "startup funding","venture capital",
             "merger","acquisition","bankruptcy",
             "ipo","market crash","economic slowdown",
 
-            // -------- Government / Law --------
             "supreme court","high court",
             "new law","bill passed",
             "court ruling","judgment",
             "legal action","investigation",
             "arrested","charged","sentenced",
 
-            // -------- Elections / Democracy --------
             "voting","polling","exit poll",
             "ballot","vote counting",
             "election commission",
             "electoral fraud","election interference",
 
-            // -------- Disasters --------
             "earthquake","flood","cyclone","hurricane",
             "wildfire","landslide","tsunami",
             "drought","heatwave",
 
-            // -------- Public Safety --------
             "shooting","stabbing",
             "bomb threat","explosion",
             "accident","train accident",
             "plane crash","road accident",
 
-            // -------- Health Emergencies --------
             "outbreak","epidemic","pandemic",
             "new variant","public health emergency",
 
-            // -------- Technology Trends --------
             "semiconductor","chip shortage",
             "quantum computing","blockchain",
             "cryptocurrency regulation",
             "web3","metaverse","augmented reality","virtual reality",
 
-            // -------- Energy / Infrastructure --------
             "power outage","blackout",
             "renewable energy","solar power","wind energy",
             "nuclear power","hydrogen energy",
 
-            // -------- Environment / Climate Policy --------
             "carbon emissions","net zero",
             "climate policy","greenhouse gas",
             "deforestation","water scarcity",
 
-            // -------- Education --------
             "school exam","board exam",
             "university","college admission",
             "education policy","online education",
 
-            // -------- Transportation --------
             "railway","metro","highway",
             "electric vehicle","ev charging",
             "fuel prices","petrol","diesel",
 
-            // -------- Entertainment / Celebrities --------
             "bollywood","hollywood","film industry",
             "movie release","box office collection",
             "film controversy","movie ban",

@@ -26,10 +26,27 @@ public class VerifyAgentService {
         this.llmService = llmService;
     }
 
-    public ChatMessage verify(String claim, String intent, List<Message> messages) {
+    public ChatMessage verify(String claim, String intent, List<String> entities, List<String> keywords, List<Message> messages) {
 
-        List<Float> queryVec = embeddingService.embed(claim);
-        List<Document> evidence = vectorSearchService.searchRaw(queryVec, 10);
+
+        List<Float> queryVec =
+                embeddingService.embed(claim);
+
+        List<Document> evidence =
+                vectorSearchService.searchRaw(
+                        queryVec,
+                        10,
+                        entities.stream()
+                                .map(e -> e.toLowerCase().trim())
+                                .distinct()
+                                .toList(),
+                        keywords.stream()
+                                .map(e -> e.toLowerCase().trim())
+                                .distinct()
+                                .toList()
+                );
+//        List<Float> queryVec = embeddingService.embed(claim);
+//        List<Document> evidence = vectorSearchService.searchRaw(queryVec, 10, intentEntities);
 
         for (Document document : evidence) System.out.println("Evidence: " + document);
 

@@ -15,7 +15,7 @@ public class IngestionController {
 
     @GetMapping("/ingest")
     public String ingest(@RequestParam String q,
-                         @RequestParam(required = false, defaultValue = "2025-12-22") String from,
+                         @RequestParam(required = false, defaultValue = "2026-01-19") String from,
                          @RequestParam(required = false, defaultValue = "1") String page)
             throws Exception {
 

@@ -1,108 +1,135 @@
 package com.madhur.news_agent.service;
 
-import com.madhur.news_agent.intents.IntentType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.madhur.news_agent.dto.IntentResponse;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class IntentAgentService {
 
     private final GeminiLLMService llmService;
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    private static final String[] COLLECTIONS = {
+            "apple","microsoft","google","openai","meta","amazon","tesla",
+            "nvidia","intel","samsung","tiktok","youtube","netflix","spotify",
+            "twitter","x",
+    };
 
     public IntentAgentService(GeminiLLMService llmService) {
         this.llmService = llmService;
     }
 
-    public IntentType detectIntent(String message) {
+    public IntentResponse detectIntent(String message) {
+
+        String collectionsList = String.join(", ", COLLECTIONS);
 
         String prompt = """
-You are an intent classifier for a news chat bot.
+                  You are an intelligent news intent classifier and retrieval optimizer.
+                  
+                  Your tasks:
+                  
+                  1️⃣ Classify intent:
+                  VERIFY → user wants fact-checking or verification
+                  CHAT → general conversation
+                  
+                  2️⃣ Rewrite the user message into an optimized semantic search query.
+                     - Remove conversational words.
+                     - Preserve factual meaning.
+                     - Add relevant context terms for news retrieval.
+                     - For geopolitical or conflict topics, include terms like:
+                       military, tensions, government statement, defense, conflict, escalation.
+                  
+                  3️⃣ Select the BEST MongoDB collection from the list.
+                  
+                  4️⃣ Extract canonical named entities (nouns only).
+                     Entities can include:
+                     - Countries
+                     - People
+                     - Organizations
+                     - Companies
+                     - Locations
+                     - Products
+                  
+                     Rules:
+                     - Convert adjectives to nouns (Ukrainian → Ukraine).
+                     - No duplicates.
+                     - Lowercase preferred.
+                  
+                  5️⃣ Extract keyword tokens for database search.
+                     Rules:
+                     - Keywords must NOT repeat entities.
+                     - Use meaningful news vocabulary only.
+                     - Avoid slang (e.g., nukes).
+                     - Use single-word tokens when possible.
+                     - Split phrases into tokens (nuclear war → nuclear, war).
+                     - Include debunk-related terms if claim may be misinformation:
+                       rumor, hoax, false, claim, report, denial, verification.
+                     - Prefer domain-specific keywords based on the entities context.
+                       Examples:
+                       Sports → cricket, match, player, team, tournament
+                       Entertainment → film, actor, instagram, viral, celebrity
+                       Politics → election, government, policy, statement
+                     - Avoid generic words like: news, report, claim, information.
+                     
+                  
+                  Return STRICT JSON ONLY:
+                  
+                  {
+                    "intent": "VERIFY or CHAT",
+                    "optimizedQuery": "rewritten semantic query",
+                    "collection": "collection_name",
+                    "entities": ["entity1","entity2"],
+                    "keywords": ["token1","token2"]
+                  }
+                  
+                  Rules:
+                  - No explanation
+                  - No markdown
+                  - No extra text
+                  - Arrays must always be present (can be empty)
+                  
+                              
+                User message:
+                """ + message;
 
-Classify the user message into exactly ONE label:
-VERIFY  -> user wants fact-checking / verification of a claim
-CHAT    -> casual/general chat not requiring verification
+        try {
 
-Rules:
-- Return ONLY one word: VERIFY or CHAT
-- No punctuation, no explanation, no extra words
+            String output = llmService.generateText(prompt);
 
-Message:
-""" + message;
 
-        String out = llmService.generateText(prompt)
-                .trim()
-                .toUpperCase();
+            output = output.replace("```json", "")
+                    .replace("```", "")
+                    .trim();
 
-        String firstToken = out.split("\\s+")[0];
+            IntentResponse response = mapper.readValue(output, IntentResponse.class);
 
-        if ("VERIFY".equals(firstToken)) return IntentType.VERIFY;
-        return IntentType.CHAT;
+            if (response.getEntities() == null)
+                response.setEntities(List.of());
+
+            if (response.getCollection() == null || response.getCollection().isBlank())
+                response.setCollection("general");
+
+            if (response.getIntent() == null)
+                response.setIntent("CHAT");
+
+            if (response.getOptimizedQuery() == null || response.getOptimizedQuery().isBlank())
+                response.setOptimizedQuery(message);
+
+            return response;
+
+        } catch (Exception e) {
+
+
+            return new IntentResponse(
+                    "CHAT",
+                    message,
+                    "general",
+                    List.of(),
+                    List.of()
+            );
+        }
     }
-
 }
-
-//package com.madhur.news_agent.service;
-//
-//import com.madhur.news_agent.agents.IntentType;
-//import org.springframework.stereotype.Service;
-//
-//@Service
-//public class IntentAgentService {
-//
-//    private final OllamaLLMService llmService;
-//
-//    public IntentAgentService(OllamaLLMService llmService) {
-//        this.llmService = llmService;
-//    }
-//
-//    public IntentType detectIntent(String message) {
-//        if (isVerification(message)) {
-//            return IntentType.VERIFY;
-//        }
-//
-//        String prompt = """
-//You are an intent classifier for a news chatbot.
-//
-//Classify the user message into exactly ONE label:
-//VERIFY  -> user wants fact-checking / verification of a claim
-//CHAT    -> casual/general chat not requiring verification
-//
-//Rules:
-//- Return ONLY one word: VERIFY or CHAT
-//- No punctuation, no explanation, no extra words
-//
-//Message:
-//""" + message;
-//
-//        String out = llmService.generateText(prompt)
-//                .trim()
-//                .toUpperCase();
-//
-//        String firstToken = out.split("\\s+")[0];
-//
-//        if ("VERIFY".equals(firstToken)) return IntentType.VERIFY;
-//        return IntentType.CHAT;
-//    }
-//
-//    private boolean isVerification(String msg) {
-//        String m = msg.toLowerCase().trim();
-//
-//        // typical verification patterns
-//        return m.startsWith("did ")
-//                || m.startsWith("has ")
-//                || m.startsWith("is ")
-//                || m.contains("is it true")
-//                || m.contains("is this true")
-//                || m.contains("fact check")
-//                || m.contains("verify")
-//                || m.contains("fake")
-//                || m.contains("real")
-//                || m.contains("hoax")
-//                || m.contains("rumor")
-//                || m.contains("claimed")
-//                || m.contains("announced")
-//                || m.contains("according to")
-//                || m.contains("report says")
-//                || m.contains("news says");
-//    }
-//
-//}

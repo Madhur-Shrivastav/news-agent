@@ -1,4 +1,5 @@
 package com.madhur.news_agent.service;
+import com.madhur.news_agent.dto.IntentResponse;
 import com.madhur.news_agent.intents.IntentType;
 import com.madhur.news_agent.dto.ChatMessage;
 import com.madhur.news_agent.models.Message;
@@ -7,6 +8,7 @@ import com.madhur.news_agent.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ChatAgentService {
@@ -27,7 +29,7 @@ public class ChatAgentService {
 
     public ChatMessage chat(String userId, String sessionId, String userMessage) throws Exception {
 
-        Session session = repo.findByUserIdAndSessionId(userId,sessionId).orElseGet(() ->
+        Session session = repo.findByUserIdAndSessionId(userId, sessionId).orElseGet(() ->
                 Session.builder()
                         .userId(userId)
                         .sessionId(sessionId)
@@ -38,7 +40,8 @@ public class ChatAgentService {
                         .build()
         );
 
-        if (session.getMessages() == null) session.setMessages(new ArrayList<>());
+        if (session.getMessages() == null)
+            session.setMessages(new ArrayList<>());
 
         session.getMessages().add(Message.builder()
                 .role("user")
@@ -47,15 +50,41 @@ public class ChatAgentService {
                 .ts(Instant.now())
                 .build());
 
-        IntentType intent = intentAgentService.detectIntent(userMessage);
-        System.out.println("User's Intent: " + intent);
+        IntentResponse intentResponse = intentAgentService.detectIntent(userMessage);
 
-        ChatMessage response = null;
+        IntentType intent =
+                intentResponse.getIntent().equalsIgnoreCase("VERIFY")
+                        ? IntentType.VERIFY
+                        : IntentType.CHAT;
+
+        String optimizedQuery = intentResponse.getOptimizedQuery();
+        List<String> entities = intentResponse.getEntities();
+        List<String> keywords = intentResponse.getKeywords();
+        //String collection = intentResponse.getCollection();
+
+        System.out.println("User Intent: " + intent);
+        System.out.println("Optimized Query: " + optimizedQuery);
+        System.out.println("Entities Extracted: " + entities);
+        System.out.println("Keywords Extracted: " + keywords);
+        //System.out.println("Collection: " + collection);
+
+        ChatMessage response;
 
         if (intent == IntentType.VERIFY) {
-            response = verifyAgentService.verify(userMessage,intent.toString(), session.getMessages());
+            response = verifyAgentService.verify(
+                    optimizedQuery,
+                    intent.toString(),
+                    entities,
+                    keywords,
+                    session.getMessages()
+            );
         } else {
-            response = normalChatService.chat(userMessage, intent.toString(), session.getMessages());
+            response = normalChatService.chat(
+                    optimizedQuery,
+                    //collection,
+                    intent.toString(),
+                    session.getMessages()
+            );
         }
 
         System.out.println("Assistant Response: " + response);
@@ -75,4 +104,5 @@ public class ChatAgentService {
 
         return response;
     }
+
 }

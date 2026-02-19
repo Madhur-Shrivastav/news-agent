@@ -3,6 +3,7 @@ package com.madhur.news_agent.service;
 import com.madhur.news_agent.dto.NewsApiResponse;
 import com.madhur.news_agent.models.News;
 import com.madhur.news_agent.repository.NewsRepository;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -17,12 +18,14 @@ public class NewsIngestionService {
 
     private final NewsAPIService newsApiClient;
     private final EmbeddingsService embeddingsService;
+    private  final MongoTemplate mongoTemplate;
     private final NewsRepository repo;
     private final HashSet<String> articles = new HashSet<>();
 
-    public NewsIngestionService(NewsAPIService newsApiClient, EmbeddingsService embeddingsService, NewsRepository repo) {
+    public NewsIngestionService(NewsAPIService newsApiClient, EmbeddingsService embeddingsService, NewsRepository repo, MongoTemplate mongoTemplate) {
         this.newsApiClient = newsApiClient;
         this.embeddingsService = embeddingsService;
+        this.mongoTemplate = mongoTemplate;
         this.repo = repo;
     }
 
@@ -72,7 +75,7 @@ public class NewsIngestionService {
                     .embedding(embedding)
                     .build();
 
-            repo.save(doc);
+            mongoTemplate.insert(doc, query.toLowerCase());
             inserted++;
         }
         System.out.println("Unique hashes: " + articles.size());
