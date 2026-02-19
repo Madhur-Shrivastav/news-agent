@@ -157,22 +157,29 @@ public class NewsIngestionScheduler {
 
     };
 
-    //@Scheduled(cron = "0 0 0 * * ?")
     @Scheduled(fixedRate = 24 * 60 * 60 * 1000)
-    //@Scheduled(fixedRate = 2 * 60 * 1000)
-    public void runDailyIngestion() throws Exception {
+    //@Scheduled(fixedRate = 60 * 1000)
+    public void runDailyIngestion() {
 
-        String today = LocalDate.now().minusDays(1).toString();
+        String today = LocalDate.now().minusDays(2).toString();
 
-        try {
-            ingestionService.ingest(queries[index], today, "1");
-            System.out.println("Inserted news for: " + queries[index]);
-        } catch (Exception e) {
-            System.out.println("Skipped for q: " + queries[index] + " because: " + e.getMessage());
+        int batchSize = 10;
+
+        for (int i = 0; i < batchSize; i++) {
+
+            try {
+                int number = ingestionService.ingest(queries[index], today, "1");
+                System.out.println("Inserted " + number + " news articles for: " + queries[index]);
+            } catch (Exception e) {
+                System.out.println("Skipped for q: " + queries[index] + " because: " + e.getMessage());
+            }
+
+            index++;
+
+            if (index >= queries.length) {
+                index = 0;
+            }
         }
-
-        index++;
-        if(index>=queries.length) index =0;
-
     }
+
 }
