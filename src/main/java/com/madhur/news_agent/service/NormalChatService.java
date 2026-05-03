@@ -98,10 +98,6 @@ Return JSON in EXACTLY this format:
                 vr.setVerdict("UNVERIFIED");
             }
 
-
-            if (vr.getConfidence() < 0) vr.setConfidence(0);
-            if (vr.getConfidence() > 100) vr.setConfidence(100);
-
             if (vr.getReasoning() == null) vr.setReasoning("");
 
             parsed.setVerification(vr);
@@ -122,7 +118,8 @@ Return JSON in EXACTLY this format:
                     .verification(
                             VerifyResponse.builder()
                                     .verdict("UNVERIFIED")
-                                    .confidence(40)
+                                    .fake_probability(40)
+                                    .true_probability(60)
                                     .reasoning("Could not parse model response.")
                                     .build()
                     )

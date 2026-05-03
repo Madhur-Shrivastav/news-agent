@@ -61,12 +61,30 @@ public class EmbeddingsService {
         return embedding.stream().map(Number::floatValue).toList();
     }
 
+//    private String buildText(News a) {
+//        String title = a.getTitle() == null ? "" : a.getTitle();
+//        String desc = a.getDescription() == null ? "" : a.getDescription();
+//        String content = a.getContent() == null ? "" : a.getContent();
+//
+//        return ("Title: " + title + "\nDescription: " + desc + "\nContent: " + content).trim();
+//    }
+
     private String buildText(News a) {
+
         String title = a.getTitle() == null ? "" : a.getTitle();
         String desc = a.getDescription() == null ? "" : a.getDescription();
         String content = a.getContent() == null ? "" : a.getContent();
 
-        return ("Title: " + title + "\nDescription: " + desc + "\nContent: " + content).trim();
+        // 🔥 prioritize important info
+        String base = (title + ". " + desc).trim();
+
+        // 🔥 limit content size
+        int limit = 1200; // safe for nomic
+        String shortContent = content.length() > limit
+                ? content.substring(0, limit)
+                : content;
+
+        return (base + ". " + shortContent).trim();
     }
 
 }

@@ -28,7 +28,6 @@ public class VerifyAgentService {
 
     public ChatMessage verify(String claim, String intent, List<String> entities, List<String> keywords, List<Message> messages) {
 
-
         List<Float> queryVec =
                 embeddingService.embed(claim);
 
@@ -45,8 +44,7 @@ public class VerifyAgentService {
                                 .distinct()
                                 .toList()
                 );
-//        List<Float> queryVec = embeddingService.embed(claim);
-//        List<Document> evidence = vectorSearchService.searchRaw(queryVec, 10, intentEntities);
+
 
         for (Document document : evidence) System.out.println("Evidence: " + document);
 
@@ -58,7 +56,8 @@ public class VerifyAgentService {
                     .verification(
                             VerifyResponse.builder()
                                     .verdict("UNVERIFIED")
-                                    .confidence(10)
+                                    .fake_probability(10)
+                                    .true_probability(90)
                                     .reasoning("No relevant evidence articles found in the database.")
                                     .citations(List.of())
                                     .build()
@@ -107,7 +106,13 @@ Claim:
             sb.append("Description: ").append(nullSafe(a.getString("description"))).append("\n");
             sb.append("Content: ").append(truncate(nullSafe(a.getString("content")), 1200)).append("\n");
             sb.append("URL: ").append(nullSafe(a.getString("url"))).append("\n");
-            sb.append("Score: ").append(a.get("score")).append("\n\n");
+            sb.append("Similarity Score: ").append(a.get("score")).append("\n\n");
+            sb.append("Fake Probability: ")
+                    .append(a.get("fake_probability") != null ? a.get("fake_probability") : "N/A")
+                    .append("\n");
+            sb.append("True Probability: ")
+                    .append(a.get("real_probability") != null ? a.get("real_probability") : "N/A")
+                    .append("\n\n");
         }
 
         sb.append("\nUSER CHAT HISTORY (for context only):\n");
@@ -131,7 +136,8 @@ Return JSON in EXACTLY this format:
   "reply": "string",
   "verification": {
     "verdict": "TRUE|FALSE|UNVERIFIED",
-    "confidence": 0,
+    "fake_probability": int,
+    "true_probability": int,
     "reasoning": "string",
     "citations": ["url1", "url2", ... "url5"]
   }
@@ -185,9 +191,6 @@ Return JSON in EXACTLY this format:
                 vr.setVerdict("UNVERIFIED");
             }
 
-            if (vr.getConfidence() < 0) vr.setConfidence(0);
-            if (vr.getConfidence() > 100) vr.setConfidence(100);
-
             if (vr.getReasoning() == null) vr.setReasoning("");
 
             parsed.setVerification(vr);
@@ -199,6 +202,7 @@ Return JSON in EXACTLY this format:
             return parsed;
 
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ChatMessage.builder()
                     .sessionId("")
                     .intent("VERIFY")
@@ -206,7 +210,8 @@ Return JSON in EXACTLY this format:
                     .verification(
                             VerifyResponse.builder()
                                     .verdict("UNVERIFIED")
-                                    .confidence(40)
+                                    .fake_probability(40)
+                                    .true_probability(60)
                                     .reasoning("Could not parse model response. Evidence retrieved but output format was invalid.")
                                     .citations(evidence.stream().map(d -> d.getString("url")).limit(3).toList())
                                     .build()

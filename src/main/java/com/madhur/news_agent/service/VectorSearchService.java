@@ -1,11 +1,17 @@
 package com.madhur.news_agent.service;
+
 import org.bson.Document;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class VectorSearchService {
@@ -14,6 +20,53 @@ public class VectorSearchService {
 
     public VectorSearchService(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
+    }
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    public List<Map<String, Double>> getBatchProbabilities(List<String> texts) {
+
+        String url = "http://localhost:8000/predict_batch";
+
+        List<String> trimmedTexts = texts.stream()
+                .map(t -> t == null ? "" : t)
+                .toList();
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("texts", trimmedTexts);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+        try {
+            ResponseEntity<List<Map<String, Double>>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            entity,
+                            new ParameterizedTypeReference<List<Map<String, Double>>>() {}
+                    );
+
+            List<Map<String, Double>> body = response.getBody();
+
+            if (body == null || body.size() != trimmedTexts.size()) {
+                throw new RuntimeException("Invalid response from FastAPI");
+            }
+
+            return body;
+
+        } catch (Exception e) {
+            System.out.println("❌ Batch call failed: " + e.getMessage());
+
+            return trimmedTexts.stream()
+                    .map(t -> Map.of(
+                            "fake_probability", 0.5,
+                            "real_probability", 0.5
+                    ))
+                    .toList();
+        }
     }
 
     public List<Document> searchRaw(
@@ -75,6 +128,7 @@ public class VectorSearchService {
         Document projectStage = new Document("$project",
                 new Document("title", 1)
                         .append("description", 1)
+                        .append("content", 1)
                         .append("url", 1)
                         .append("publishedAt", 1)
                         .append("sourceName", 1)
@@ -110,6 +164,40 @@ public class VectorSearchService {
             results = mongoTemplate
                     .aggregate(fallbackAgg, "news_articles", Document.class)
                     .getMappedResults();
+        }
+
+        List<String> texts = results.stream()
+                .map(doc -> {
+                    String content = doc.getString("content");
+                    return (content == null || content.isBlank()) ? "" : content;
+                })
+                .toList();
+
+        List<Map<String, Double>> predictions = getBatchProbabilities(texts);
+
+        if (predictions == null || predictions.size() != results.size()) {
+            throw new RuntimeException("Mismatch between input and predictions");
+        }
+
+        for (int i = 0; i < results.size(); i++) {
+
+            Document doc = results.get(i);
+            String content = texts.get(i);
+
+            if (content.isBlank()) {
+                doc.put("fake_probability", 0.5);
+                doc.put("real_probability", 0.5);
+                continue;
+            }
+
+            Map<String, Double> probs = predictions.get(i);
+
+            doc.put("fake_probability", probs.get("fake_probability"));
+            doc.put("real_probability", probs.get("real_probability"));
+
+//            System.out.println("Content:" + content);
+//            System.out.println("Fake Probability:" + probs.get("fake_probability"));
+//            System.out.println("Real Probability:" + probs.get("real_probability"));
         }
 
         return results;
