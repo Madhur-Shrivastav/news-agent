@@ -6,6 +6,8 @@ import com.madhur.news_agent.models.Session;
 import com.madhur.news_agent.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -29,8 +31,20 @@ public class SessionService {
     }
 
     public List<Message> getSessionMessages(String userId, String sessionId) {
+
         Session session = repo.findByUserIdAndSessionId(userId, sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseGet(() -> {
+                    Session newSession = Session.builder()
+                            .userId(userId)
+                            .sessionId(sessionId)
+                            .created_at(Instant.now())
+                            .updated_at(Instant.now())
+                            .messages(new ArrayList<>())
+                            .summary("")
+                            .build();
+
+                    return repo.save(newSession);
+                });
 
         return session.getMessages();
     }

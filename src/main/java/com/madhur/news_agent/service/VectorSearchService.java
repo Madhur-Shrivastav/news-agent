@@ -26,7 +26,7 @@ public class VectorSearchService {
 
     public List<Map<String, Double>> getBatchProbabilities(List<String> texts) {
 
-        String url = "http://localhost:8000/predict_batch";
+        String url = "http://127.0.0.1:8000/predict_batch";
 
         List<String> trimmedTexts = texts.stream()
                 .map(t -> t == null ? "" : t)

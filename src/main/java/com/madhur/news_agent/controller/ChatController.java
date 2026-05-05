@@ -42,7 +42,7 @@ public class ChatController {
     }
 
     @GetMapping("/sessions/{userId}/{sessionId}")
-    public List<Message> getUserSessions(@PathVariable String userId, @PathVariable String sessionId) {
+    public List<Message> getSessionMessages(@PathVariable String userId, @PathVariable String sessionId) {
         return sessionService.getSessionMessages(userId,sessionId);
     }
 }
