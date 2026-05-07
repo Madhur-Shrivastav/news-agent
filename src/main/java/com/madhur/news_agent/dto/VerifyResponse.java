@@ -10,9 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class VerifyResponse {
-    private String verdict;          // TRUE / FALSE / UNVERIFIED
-    private int fake_probability;
-    private int true_probability;
-    private String reasoning;        // short reasoning
-    private List<String> citations;  // urls of evidence
+    private String verdict;
+    private String reasoning;
+    private List<Citation> citations;
 }

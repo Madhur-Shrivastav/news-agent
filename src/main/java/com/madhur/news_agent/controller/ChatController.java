@@ -45,4 +45,15 @@ public class ChatController {
     public List<Message> getSessionMessages(@PathVariable String userId, @PathVariable String sessionId) {
         return sessionService.getSessionMessages(userId,sessionId);
     }
+
+    @DeleteMapping("/sessions/{userId}/{sessionId}")
+    public String deleteSession(
+            @PathVariable String userId,
+            @PathVariable String sessionId
+    ) {
+
+        sessionService.deleteSession(userId, sessionId);
+
+        return "Session deleted successfully";
+    }
 }

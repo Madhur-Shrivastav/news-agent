@@ -48,4 +48,14 @@ public class SessionService {
 
         return session.getMessages();
     }
+
+    public void deleteSession(String userId, String sessionId) {
+
+        Session session = repo.findByUserIdAndSessionId(userId, sessionId)
+                .orElseThrow(() ->
+                        new RuntimeException("Session not found")
+                );
+
+        repo.delete(session);
+    }
 }
